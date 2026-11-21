@@ -743,6 +743,37 @@
         #toast.show {
             opacity: 1;
         }
+
+        /* ===== TEAM-LOBBY ===== */
+        .lb-hide { display: none !important; }
+        .arena-wrap { display: none; width: 100%; max-width: 920px; flex-direction: column; align-items: center; gap: 10px; }
+        .arena-wrap.show { display: flex; }
+        .lb-card { width: 100%; max-width: 440px; display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center;
+            background: linear-gradient(180deg, rgba(22,27,34,.96), rgba(13,17,23,.96)); border: 2px solid #38bdf8; border-radius: 14px;
+            padding: 18px; box-shadow: 0 0 18px rgba(56,189,248,.22); }
+        .lb-title { margin: 0; color: #38bdf8; text-shadow: 0 0 10px rgba(56,189,248,.6); letter-spacing: 2px; font-size: 1.5rem; }
+        .lb-sub { font-size: .8rem; color: #8b949e; line-height: 1.4; }
+        .lb-or { color: #8b949e; font-size: .8rem; }
+        .lb-code { font-size: 2.4rem; font-weight: bold; letter-spacing: 8px; color: #ffd700; text-shadow: 0 0 12px rgba(255,215,0,.5);
+            background: #0d1117; border: 2px dashed #ffd700; border-radius: 10px; padding: 6px 16px; user-select: text; -webkit-user-select: text; }
+        .lb-card .btn { width: 100%; max-width: 260px; }
+        .lb-players { width: 100%; display: flex; flex-direction: column; gap: 6px; }
+        .lb-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; background: #161b22; border: 1px solid #30363d;
+            border-radius: 8px; padding: 7px 10px; font-size: .85rem; color: #f0f6fc; font-weight: bold; text-align: left; }
+        .lb-chip { background: #0d1117; color: var(--tc, #fff); border: 2px solid #30363d; border-radius: 6px; padding: 3px 8px;
+            font-family: inherit; font-size: .75rem; font-weight: bold; cursor: pointer; margin-left: 4px; }
+        .lb-chip.on { border-color: var(--tc, #fff); box-shadow: 0 0 8px var(--tc, #fff); }
+        .lb-settings { width: 100%; display: flex; flex-direction: column; gap: 8px; }
+        .lb-settings label { display: flex; flex-direction: column; gap: 3px; font-size: .75rem; color: #8b949e; text-align: left; }
+        .lb-settings select { background: #0d1117; color: #fff; border: 2px solid #39ff14; border-radius: 6px; padding: 7px 8px; font-family: inherit; font-size: .85rem; }
+        .lb-settings select:disabled { opacity: .6; border-color: #30363d; }
+        .lb-game { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+        .arena-hud { display: flex; justify-content: space-between; gap: 12px; width: 100%; font-weight: bold; font-size: .9rem; flex-wrap: wrap; }
+        .arena-bar { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+        .arena-bar .btn { padding: 8px 14px; font-size: .85rem; }
+        #arenaCanvas { max-width: 100%; display: block; border: 4px solid #39ff14; border-radius: 14px; background: #050709;
+            box-shadow: 0 0 26px rgba(57,255,20,.32); touch-action: none; }
+        .arena-hint { font-size: .75rem; color: #8b949e; text-align: center; line-height: 1.5; }
     </style>
 </head>
 <body>
@@ -837,7 +868,7 @@
         <!-- 1b. Spielmodi-Auswahl-Screen -->
         <div class="overlay-screen" id="modesScreen">
             <div class="shop-header">
-                <h2 style="color: #38bdf8; text-shadow: 0 0 8px rgba(56, 189, 248, 0.5);">SPIELMODI (9)</h2>
+                <h2 style="color: #38bdf8; text-shadow: 0 0 8px rgba(56, 189, 248, 0.5);">SPIELMODI (10)</h2>
                 <span style="font-size: 0.8rem; color: #8b949e;">Wähle deine Challenge</span>
             </div>
             <div class="modes-grid" id="modesGrid"></div>
@@ -913,6 +944,66 @@
     <div class="hint">Steuerung: Pfeiltasten / WASD, Wischen oder Buttons</div>
     <div id="toast"></div>
 
+    <!-- Team-Lobby / Arena -->
+    <div class="arena-wrap" id="arenaWrap">
+        <div class="lb-card" id="lbMenu">
+            <h2 class="lb-title">🌐 TEAM-LOBBY</h2>
+            <div class="lb-sub">Erstelle eine Lobby und gib den Code an deine Freunde weiter – oder trag den Code deiner Freunde ein.</div>
+            <button class="btn btn-primary" id="lbCreateBtn">➕ Lobby erstellen</button>
+            <div class="lb-or">— oder —</div>
+            <input type="text" class="field" id="lbCodeInput" maxlength="5" placeholder="LOBBY-CODE" autocomplete="off" style="text-transform: uppercase; letter-spacing: 4px; margin-bottom: 0;">
+            <button class="btn btn-shop" id="lbJoinBtn">🚪 Beitreten</button>
+            <div class="form-error" id="lbMsg"></div>
+            <button class="btn btn-secondary" id="lbBackBtn">← Zurück</button>
+        </div>
+
+        <div class="lb-card lb-hide" id="lbRoom">
+            <h2 class="lb-title">LOBBY</h2>
+            <div class="lb-sub">Lobby-Code – teile ihn mit deinen Freunden:</div>
+            <div class="lb-code" id="lbCodeShow">-----</div>
+            <button class="btn btn-secondary" id="lbCopyBtn" style="padding: 6px 12px; font-size: .8rem;">📋 Code kopieren</button>
+            <div class="lb-players" id="lbPlayers"></div>
+            <div class="lb-settings">
+                <label>Spielmodus
+                    <select id="lbType">
+                        <option value="fight">⚔️ Normaler Kampf (Team gegen Team)</option>
+                        <option value="zombie">🧟 Alle gegen Zombies</option>
+                        <option value="ctf">🚩 Capture the Flag (Team)</option>
+                        <option value="race">🏁 Rennen (alle gegen alle)</option>
+                    </select>
+                </label>
+                <label id="lbSizeWrap">Teamgröße
+                    <select id="lbSize">
+                        <option value="1">1 vs 1</option>
+                        <option value="2" selected>2 vs 2</option>
+                        <option value="3">3 vs 3</option>
+                        <option value="4">4 vs 4</option>
+                    </select>
+                </label>
+            </div>
+            <div class="lb-sub" id="lbHint"></div>
+            <button class="btn btn-primary" id="lbStartBtn">▶ Spiel starten</button>
+            <button class="btn btn-secondary" id="lbLeaveBtn">🚪 Lobby verlassen</button>
+        </div>
+
+        <div class="lb-game lb-hide" id="lbGame">
+            <div class="arena-hud">
+                <span id="aHudA" style="color:#38bdf8"></span>
+                <span id="aHudB" style="color:#fb7185"></span>
+            </div>
+            <canvas id="arenaCanvas"></canvas>
+            <div class="arena-bar">
+                <button class="btn btn-primary lb-hide" id="gAgainBtn">↻ Nochmal</button>
+                <button class="btn btn-shop lb-hide" id="gLobbyBtn">🏠 Zur Lobby</button>
+                <button class="btn btn-secondary" id="gLeaveBtn">🚪 Verlassen</button>
+            </div>
+            <div class="arena-hint">
+                Steuerung: W A S D / Pfeiltasten / Wischen · Wer in eine fremde Schlange schlängelt, scheidet aus.<br>
+                Zombies: Heil-Tränke (+) beleben Freunde · Capture the Flag: Flagge klauen und in die eigene Basis bringen · Rennen: Checkpoints der Reihe nach abfahren. Sieg = Münzen 🪙
+            </div>
+        </div>
+    </div>
+
     <script type="module">
         // Firebase wird dynamisch geladen: Scheitert das (offline, Werbeblocker, gesperrte Domain),
         // läuft die Bestenliste trotzdem lokal weiter.
@@ -977,6 +1068,7 @@
                     import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js")
                 ]);
                 ({ collection, addDoc, getDocs, updateDoc, query } = fsMod);
+                window.__fsMod = fsMod;
                 const app = appMod.initializeApp(firebaseConfig);
                 db = fsMod.getFirestore(app);
                 auth = authMod.getAuth(app);
@@ -993,6 +1085,8 @@
                 console.warn("Firebase konnte nicht geladen werden, nutze lokalen Speicher:", err);
             }
         })();
+
+        window.__getFb = async () => { await authReady; return db ? { db, fs: window.__fsMod } : null; };
 
         function getLocalBoardKey(modeId) {
             return `retroSnakeBoard3000_${modeId}`;
@@ -1663,6 +1757,18 @@
 
                 grid.appendChild(card);
             });
+
+            const lobbyCard = document.createElement('div');
+            lobbyCard.className = 'mode-card';
+            lobbyCard.style.cssText = 'grid-column: 1 / -1; border-color: #38bdf8; background: rgba(56, 189, 248, 0.1);';
+            lobbyCard.innerHTML = `
+                <span class="mode-icon">🌐</span>
+                <span class="mode-name">Team-Lobby (Multiplayer)</span>
+                <span class="mode-desc">Lobby erstellen, Code teilen, Freunde beitreten lassen. Kampf, Capture the Flag, Rennen oder alle gegen Zombies!</span>
+                <span class="mode-mult-badge">Online mit Freunden 🪙 Siegprämie</span>
+            `;
+            lobbyCard.onclick = () => { if (window.openTeamLobby) window.openTeamLobby(); };
+            grid.appendChild(lobbyCard);
         }
 
         function renderShop(keepScroll = false) {
@@ -3738,6 +3844,825 @@
             resizeCanvas();
             openLogin();
         };
+    </script>
+    <script>
+const Sim = (function () {
+    const GW = 56, GH = 36, TICK = 120;
+    const D = [[0, -1], [1, 0], [0, 1], [-1, 0]];
+    const K = (x, y) => x + ',' + y;
+    const inb = (x, y) => x >= 0 && y >= 0 && x < GW && y < GH;
+
+    function occ(st) {
+        const m = new Map();
+        st.rocks.forEach((r) => m.set(K(r.x, r.y), -1));
+        st.snakes.forEach((s) => {
+            if (!s.alive) return;
+            s.body.forEach((p, i) => { if (i < s.body.length - 1 || s.grow > 0) m.set(K(p.x, p.y), s.id); });
+        });
+        return m;
+    }
+    function freeCell(st, o, minDist) {
+        for (let t = 0; t < 80; t++) {
+            const x = 1 + Math.floor(Math.random() * (GW - 2)), y = 1 + Math.floor(Math.random() * (GH - 2));
+            if (o.has(K(x, y))) continue;
+            if (st.foods.some((f) => f.x === x && f.y === y)) continue;
+            if (minDist) {
+                let ok = true;
+                for (const s of st.snakes) if (s.alive && Math.abs(s.body[0].x - x) + Math.abs(s.body[0].y - y) < minDist) { ok = false; break; }
+                if (!ok) continue;
+            }
+            return { x, y };
+        }
+        return null;
+    }
+    function addFood(st, x, y) {
+        if (x === undefined) { const c = freeCell(st, occ(st)); if (!c) return; x = c.x; y = c.y; }
+        st.foods.push({ x, y });
+    }
+    function spawnZombie(st) { const c = freeCell(st, occ(st), 10); if (c) st.zombies.push({ x: c.x, y: c.y }); }
+    function spawnPotion(st) { const c = freeCell(st, occ(st)); if (c) st.potions.push({ x: c.x, y: c.y }); }
+    function mk(st, team, idx, x, y, d, pl) {
+        const body = [];
+        for (let k = 0; k < 4; k++) body.push({ x: x - D[d][0] * k, y: y - D[d][1] * k });
+        st.snakes.push({ id: st.snakes.length, team, idx, pid: pl ? pl.pid : '', name: pl ? pl.name : '', skin: pl ? pl.skin : '',
+            body, dir: d, next: d, alive: true, grow: 0, left: false, cp: 0, respawn: 0 });
+    }
+    function foodTarget(st) { if (st.ty === 'race') return 0; if (st.ty === 'zombie') return 8 + st.n * 2; if (st.ty === 'ctf') return 6 + st.n * 2; return 8 + st.n * 3; }
+
+    function createRace(st, cfg) {
+        const m = Math.min(8, Math.max(cfg.players.length, 4));
+        st.n = m;
+        st.cps = [[14, 6], [24, 30], [34, 6], [44, 30], [52, 8], [30, 18], [6, 18]].map((a) => ({ x: a[0], y: a[1] }));
+        for (let i = 0; i < m; i++) mk(st, 0, i, 4, Math.round((i + 1) * GH / (m + 1)), 1, cfg.players[i]);
+        const okRock = (x, y) => x >= 8 && x < GW - 1 && y >= 1 && y < GH - 1 && !st.rockSet.has(K(x, y)) &&
+            !st.cps.some((c) => Math.abs(c.x - x) <= 3 && Math.abs(c.y - y) <= 3);
+        const put = (x, y) => { st.rocks.push({ x, y }); st.rockSet.add(K(x, y)); };
+        for (let t = 0; t < 300 && st.rocks.length < 46; t++) {
+            const x = 8 + Math.floor(Math.random() * (GW - 12)), y = 1 + Math.floor(Math.random() * (GH - 2));
+            if (!okRock(x, y)) continue;
+            put(x, y);
+            if (Math.random() < 0.5) { if (Math.random() < 0.5 ? okRock(x + 1, y) : false) put(x + 1, y); else if (okRock(x, y + 1)) put(x, y + 1); }
+        }
+    }
+
+    function create(cfg) {
+        const st = { ty: cfg.type, n: cfg.n, ph: 'count', countMs: 3000, timeMs: 120000, snakes: [], foods: [], zombies: [],
+            potions: [], kills: [0, 0], score: 0, winner: null, frame: 0, zt: 0, zw: 0, gid: cfg.gid,
+            rocks: [], rockSet: new Set(), flags: [], caps: [0, 0], cps: [] };
+        if (cfg.type === 'race') {
+            createRace(st, cfg);
+        } else if (cfg.type === 'zombie') {
+            const m = cfg.players.length;
+            st.n = m;
+            cfg.players.forEach((pl, i) => mk(st, 0, i, 6, Math.round((i + 1) * GH / (m + 1)), 1, pl));
+            for (let i = 0; i < 3; i++) spawnZombie(st);
+            for (let i = 0; i < 2; i++) spawnPotion(st);
+        } else {
+            const n = cfg.n;
+            for (let t = 0; t < 2; t++) {
+                const pls = cfg.players.filter((p) => p.team === t);
+                for (let i = 0; i < n; i++) mk(st, t, i, t === 0 ? 6 : GW - 7, Math.round((i + 1) * GH / (n + 1)), t === 0 ? 1 : 3, pls[i]);
+            }
+        }
+        if (cfg.type === 'ctf') {
+            const hy = Math.round(GH / 2);
+            st.flags = [{ t: 0, x: 2, y: hy, hx: 2, hy, c: -1, drop: 0 }, { t: 1, x: GW - 3, y: hy, hx: GW - 3, hy, c: -1, drop: 0 }];
+            st.timeMs = 180000;
+        }
+        if (cfg.type === 'race') st.timeMs = 150000;
+        for (let i = 0; i < foodTarget(st); i++) addFood(st);
+        return st;
+    }
+
+    function kill(st, s, killer) {
+        s.alive = false;
+        if (killer !== null && killer !== undefined && killer >= 0 && killer !== s.id && st.snakes[killer].team !== s.team) st.kills[st.snakes[killer].team]++;
+        st.flags.forEach((f) => { if (f.c === s.id) { f.c = -1; f.x = s.body[0].x; f.y = s.body[0].y; f.drop = 0; } });
+        if (st.ty === 'ctf') s.respawn = 25;
+        if (st.ty === 'race') s.respawn = 15;
+        if (st.ty !== 'race') s.body.forEach((p, i) => { if (i % 2 === 0) st.foods.push({ x: p.x, y: p.y }); });
+    }
+
+    function respawn(st, s) {
+        const o = occ(st);
+        for (let t = 0; t < 60; t++) {
+            const x = 5 + Math.floor(Math.random() * (GW - 10)), y = 2 + Math.floor(Math.random() * (GH - 4));
+            let ok = true;
+            for (let k = 0; k < 6 && ok; k++) if (o.has(K(x - k, y)) || o.has(K(x + 1, y))) ok = false;
+            if (ok && st.zombies.some((z) => Math.abs(z.x - x) + Math.abs(z.y - y) < 6)) ok = false;
+            if (!ok) continue;
+            s.body = []; for (let k = 0; k < 4; k++) s.body.push({ x: x - k, y });
+            s.dir = 1; s.next = 1; s.grow = 0; s.alive = true;
+            return;
+        }
+    }
+
+    function botDir(st, s, o, tgt) {
+        const h = s.body[0];
+        let target = tgt || null, best = 1e9;
+        for (const e of (target ? [] : st.snakes)) {
+            if (!e.alive || e.team === s.team) continue;
+            const d = Math.abs(e.body[0].x - h.x) + Math.abs(e.body[0].y - h.y);
+            if (d < 14 && d < best && Math.random() < 0.6) { best = d; target = { x: e.body[0].x + D[e.dir][0] * 4, y: e.body[0].y + D[e.dir][1] * 4 }; }
+        }
+        if (!target) for (const f of st.foods) { const d = Math.abs(f.x - h.x) + Math.abs(f.y - h.y); if (d < best) { best = d; target = f; } }
+        const danger = new Set();
+        st.snakes.forEach((e) => {
+            if (!e.alive || e === s) return;
+            for (let d = 0; d < 4; d++) { if (d === (e.dir + 2) % 4) continue; danger.add(K(e.body[0].x + D[d][0], e.body[0].y + D[d][1])); }
+        });
+        let bd = s.dir, bs = -1e9;
+        for (let d = 0; d < 4; d++) {
+            if (d === (s.dir + 2) % 4) continue;
+            const x = h.x + D[d][0], y = h.y + D[d][1];
+            if (!inb(x, y) || o.has(K(x, y))) continue;
+            let free = 0;
+            for (let e = 0; e < 4; e++) { const a = x + D[e][0], b = y + D[e][1]; if (inb(a, b) && !o.has(K(a, b))) free++; }
+            const x2 = x + D[d][0] * 2, y2 = y + D[d][1] * 2;
+            const wall = (!inb(x2, y2) || o.has(K(x2, y2))) ? -6 : 0;
+            let sc = free * 3 + wall + Math.random() * 2 - (danger.has(K(x, y)) ? 8 : 0);
+            if (target) sc -= Math.abs(target.x - x) + Math.abs(target.y - y);
+            if (sc > bs) { bs = sc; bd = d; }
+        }
+        return bd;
+    }
+
+    function bite(st) {
+        for (const s of st.snakes) {
+            if (!s.alive) continue;
+            const h = s.body[0];
+            if (st.zombies.some((z) => z.x === h.x && z.y === h.y)) kill(st, s, null);
+        }
+    }
+
+    function ctfTarget(st, s) {
+        const own = st.flags[s.team], en = st.flags[1 - s.team];
+        if (en.c === s.id) return { x: own.hx, y: own.hy };
+        if (own.c >= 0) return st.snakes[own.c].body[0];
+        if (!(own.x === own.hx && own.y === own.hy)) return { x: own.x, y: own.y };
+        if (en.c >= 0) return null;
+        if (s.idx % 2 === 1 && st.n >= 2) return null;
+        return { x: en.x, y: en.y };
+    }
+    function placeSnake(st, s, x, y, d, hard) {
+        const o = hard ? occ(st) : null, cells = [];
+        for (let k = 0; k < 4; k++) cells.push({ x: x - D[d][0] * k, y: y - D[d][1] * k });
+        for (const p of cells) { if (!inb(p.x, p.y) || st.rockSet.has(K(p.x, p.y)) || (hard && o.has(K(p.x, p.y)))) return false; }
+        s.body = cells; s.dir = d; s.next = d; s.grow = 0; s.alive = true;
+        return true;
+    }
+    function tryRespawn(st, s) {
+        if (st.ty === 'ctf') {
+            const x = s.team === 0 ? 6 : GW - 7, y = Math.round((s.idx + 1) * GH / (st.n + 1)), d = s.team === 0 ? 1 : 3;
+            for (const dy of [0, 1, -1, 2, -2]) if (placeSnake(st, s, x, y + dy, d, true)) return true;
+            return false;
+        }
+        let cx = 4, cy = Math.round((s.idx + 1) * GH / (st.n + 1));
+        if (s.cp > 0) { cx = st.cps[s.cp - 1].x; cy = st.cps[s.cp - 1].y; }
+        const t = st.cps[s.cp] || { x: cx + 1, y: cy };
+        const dx = t.x - cx, dy = t.y - cy;
+        const d = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 1 : 3) : (dy > 0 ? 2 : 0);
+        for (let r = 0; r <= 5; r++) for (let ox = -r; ox <= r; ox++) for (let oy = -r; oy <= r; oy++) {
+            if (Math.max(Math.abs(ox), Math.abs(oy)) !== r) continue;
+            if (placeSnake(st, s, cx + ox, cy + oy, d, false)) return true;
+        }
+        return false;
+    }
+
+    function step(st, inputs) {
+        st.frame++;
+        if (st.ph === 'count') { st.countMs -= TICK; if (st.countMs <= 0) st.ph = 'play'; return; }
+        if (st.ph !== 'play') return;
+        const zomb = st.ty === 'zombie', soft = zomb || st.ty === 'race';
+        if (st.ty === 'ctf' || st.ty === 'race') {
+            for (const s of st.snakes) {
+                if (!s.alive && !s.left && s.respawn > 0) { s.respawn--; if (s.respawn === 0 && !tryRespawn(st, s)) s.respawn = 1; }
+            }
+        }
+        const o = occ(st), moves = [];
+        for (const s of st.snakes) {
+            if (!s.alive) continue;
+            if (s.pid === '') {
+                let tg = null;
+                if (st.ty === 'ctf') tg = ctfTarget(st, s); else if (st.ty === 'race') tg = st.cps[s.cp] || null;
+                s.next = botDir(st, s, o, tg);
+            } else if (inputs[s.pid] !== undefined) s.next = inputs[s.pid];
+            if (s.next !== (s.dir + 2) % 4) s.dir = s.next;
+            moves.push({ s, x: s.body[0].x + D[s.dir][0], y: s.body[0].y + D[s.dir][1] });
+        }
+        const dead = [];
+        for (const m of moves) {
+            let die = false, killer = null;
+            const k = K(m.x, m.y);
+            if (!inb(m.x, m.y)) die = true;
+            else if (st.rockSet.has(k)) die = true;
+            else if (soft) {
+                const b = m.s.body;
+                for (let i = 0; i < b.length; i++) if (b[i].x === m.x && b[i].y === m.y && (i < b.length - 1 || m.s.grow > 0)) { die = true; break; }
+            } else if (o.has(k)) { die = true; killer = o.get(k); }
+            else if (moves.some((q) => q.s !== m.s && q.x === m.x && q.y === m.y)) die = true;
+            if (die) dead.push({ s: m.s, k: killer });
+        }
+        for (const d of dead) kill(st, d.s, d.k);
+        for (const m of moves) {
+            if (!m.s.alive) continue;
+            m.s.body.unshift({ x: m.x, y: m.y });
+            const fi = st.foods.findIndex((f) => f.x === m.x && f.y === m.y);
+            if (fi >= 0) { st.foods.splice(fi, 1); m.s.grow += 2; }
+            if (m.s.grow > 0) m.s.grow--; else m.s.body.pop();
+        }
+        for (let i = 0; i < 6 && st.foods.length < foodTarget(st); i++) addFood(st);
+
+        if (zomb) {
+            for (const s of st.snakes) {
+                if (!s.alive) continue;
+                const h = s.body[0];
+                const pi = st.potions.findIndex((p) => p.x === h.x && p.y === h.y);
+                if (pi < 0) continue;
+                st.potions.splice(pi, 1);
+                for (let i = st.zombies.length - 1; i >= 0; i--) {
+                    const z = st.zombies[i];
+                    if (Math.abs(z.x - h.x) + Math.abs(z.y - h.y) <= 6) { st.zombies.splice(i, 1); st.score++; }
+                }
+                const dd = st.snakes.find((q) => !q.alive && !q.left && q.pid !== '');
+                if (dd) respawn(st, dd);
+            }
+            for (let i = 0; i < 3 && st.potions.length < 2; i++) spawnPotion(st);
+            bite(st);
+            st.zt++;
+            if (st.zt >= 3) {
+                st.zt = 0;
+                for (const z of st.zombies) {
+                    let t = null, bd = 1e9;
+                    for (const s of st.snakes) { if (!s.alive) continue; const d = Math.abs(s.body[0].x - z.x) + Math.abs(s.body[0].y - z.y); if (d < bd) { bd = d; t = s.body[0]; } }
+                    if (!t) break;
+                    const dx = t.x - z.x, dy = t.y - z.y;
+                    let nx = z.x, ny = z.y;
+                    if (Math.abs(dx) > Math.abs(dy)) nx += Math.sign(dx); else if (dy !== 0) ny += Math.sign(dy); else nx += Math.sign(dx);
+                    if (!st.zombies.some((q) => q !== z && q.x === nx && q.y === ny)) { z.x = nx; z.y = ny; }
+                }
+                bite(st);
+            }
+            st.zw++;
+            const iv = Math.max(14, 30 - Math.floor(st.score / 5) * 2);
+            if (st.zw >= iv && st.zombies.length < 8 + st.n * 3) { st.zw = 0; spawnZombie(st); }
+            st.timeMs -= TICK;
+            if (!st.snakes.some((s) => s.alive)) { st.ph = 'over'; st.winner = -1; }
+            else if (st.timeMs <= 0) { st.ph = 'over'; st.winner = 0; }
+        } else if (st.ty === 'race') {
+            for (const s of st.snakes) {
+                if (!s.alive || st.ph !== 'play') continue;
+                const cp = st.cps[s.cp], h = s.body[0];
+                if (cp && Math.abs(h.x - cp.x) <= 1 && Math.abs(h.y - cp.y) <= 1) {
+                    s.cp++;
+                    if (s.cp >= st.cps.length) { st.ph = 'over'; st.winner = s.id; }
+                }
+            }
+            st.timeMs -= TICK;
+            if (st.ph === 'play' && st.timeMs <= 0) {
+                let b = st.snakes[0];
+                st.snakes.forEach((q) => { if (q.cp > b.cp) b = q; });
+                st.ph = 'over'; st.winner = b.id;
+            }
+        } else if (st.ty === 'ctf') {
+            for (const f of st.flags) {
+                const home = f.x === f.hx && f.y === f.hy;
+                if (f.c >= 0) {
+                    const c = st.snakes[f.c];
+                    if (c.alive) { f.x = c.body[0].x; f.y = c.body[0].y; } else f.c = -1;
+                    continue;
+                }
+                const tc = st.snakes.find((q) => q.alive && q.body[0].x === f.x && q.body[0].y === f.y);
+                if (tc) {
+                    if (tc.team !== f.t) { f.c = tc.id; f.drop = 0; }
+                    else if (!home) { f.x = f.hx; f.y = f.hy; f.drop = 0; }
+                } else if (!home) {
+                    f.drop++;
+                    if (f.drop >= 70) { f.x = f.hx; f.y = f.hy; f.drop = 0; }
+                }
+            }
+            for (const s of st.snakes) {
+                if (!s.alive) continue;
+                const ef = st.flags.find((f) => f.c === s.id);
+                if (!ef) continue;
+                const own = st.flags[s.team], h = s.body[0];
+                if (Math.abs(h.x - own.hx) <= 3 && Math.abs(h.y - own.hy) <= 2) {
+                    st.caps[s.team]++; ef.c = -1; ef.x = ef.hx; ef.y = ef.hy; ef.drop = 0;
+                }
+            }
+            st.timeMs -= TICK;
+            if (st.caps[0] >= 3) { st.ph = 'over'; st.winner = 0; }
+            else if (st.caps[1] >= 3) { st.ph = 'over'; st.winner = 1; }
+            else if (st.timeMs <= 0) { st.ph = 'over'; st.winner = st.caps[0] === st.caps[1] ? -1 : (st.caps[0] > st.caps[1] ? 0 : 1); }
+        } else {
+            const a = st.snakes.filter((s) => s.alive && s.team === 0).length;
+            const b = st.snakes.filter((s) => s.alive && s.team === 1).length;
+            if (!a || !b) { st.ph = 'over'; st.winner = (!a && !b) ? -1 : (a ? 0 : 1); }
+        }
+    }
+
+    function removePlayer(st, pid) { st.snakes.forEach((s) => { if (s.pid === pid) { s.alive = false; s.left = true; } }); }
+
+    const flat = (a) => { const r = []; for (const p of a) r.push(p.x, p.y); return r; };
+    const unflat = (a) => { const r = []; for (let i = 0; i + 1 < a.length; i += 2) r.push({ x: a[i], y: a[i + 1] }); return r; };
+    function toWire(st) {
+        return { g: st.gid, ty: st.ty, n: st.n, ph: st.ph, cl: Math.max(1, Math.ceil(st.countMs / 1000)),
+            w: st.winner === null ? -2 : st.winner, k: st.kills, sc: st.score, tl: Math.max(0, Math.ceil(st.timeMs / 1000)), f: st.frame,
+            s: st.snakes.map((s) => ({ i: s.id, t: s.team, x: s.idx, p: s.pid, n: s.name, k: s.skin, a: s.alive ? 1 : 0, d: s.dir, c: s.cp, b: s.alive ? flat(s.body) : [] })),
+            fo: flat(st.foods), z: flat(st.zombies), po: flat(st.potions), rk: flat(st.rocks), cs: flat(st.cps),
+            fl: st.flags.map((f) => ({ t: f.t, x: f.x, y: f.y, c: f.c })), cp: st.caps };
+    }
+    function fromWire(w) {
+        return { gid: w.g, ty: w.ty, n: w.n, ph: w.ph, cl: w.cl, winner: w.w, kills: w.k, score: w.sc, tl: w.tl,
+            snakes: w.s.map((s) => ({ id: s.i, team: s.t, idx: s.x, pid: s.p, name: s.n, skin: s.k, alive: !!s.a, dir: s.d, cp: s.c || 0, body: unflat(s.b) })),
+            foods: unflat(w.fo), zombies: unflat(w.z), potions: unflat(w.po), rocks: unflat(w.rk || []), cps: unflat(w.cs || []),
+            flags: w.fl || [], caps: w.cp || [0, 0] };
+    }
+    return { GW, GH, TICK, D, create, step, toWire, fromWire, removePlayer };
+})();
+
+(function () {
+    'use strict';
+    const APP = 'retro-d8693';
+    const TEAMS = [
+        { name: 'Blau', hue: 200, hex: '#38bdf8', icon: '🔵' },
+        { name: 'Rot', hue: 350, hex: '#fb7185', icon: '🔴' }
+    ];
+    const $ = (id) => document.getElementById(id);
+    const wrap = $('arenaWrap'), cv = $('arenaCanvas'), c = cv.getContext('2d');
+    const N = { fb: null, code: '', pid: '', host: false, lobby: null, unsubs: [], sim: null, inputs: {}, timer: null,
+        writing: false, pending: null, gid: 0, awarded: 0, overSent: false, leaving: false };
+    let view = null, cell = 10, active = false, uiView = 'menu', raf = null;
+    const rid = (n) => { const a = 'abcdefghijklmnopqrstuvwxyz0123456789'; let s = ''; for (let i = 0; i < n; i++) s += a[Math.floor(Math.random() * a.length)]; return s; };
+    const toast = (t) => { if (typeof showToast === 'function') showToast(t); };
+    const myName = () => ((typeof currentAccount !== 'undefined' && currentAccount && currentAccount.name) ? currentAccount.name : 'Spieler').slice(0, 12);
+    const mySkin = () => (typeof saveData !== 'undefined' && saveData.equippedSkin) || 'classic';
+    const msg = (t) => { $('lbMsg').textContent = t || ''; };
+    const errText = (e) => String((e && (e.code || e.message)) || e).slice(0, 80);
+
+    function show(v) {
+        uiView = v;
+        $('lbMenu').classList.toggle('lb-hide', v !== 'menu');
+        $('lbRoom').classList.toggle('lb-hide', v !== 'room');
+        $('lbGame').classList.toggle('lb-hide', v !== 'game');
+        if (v === 'game') fit();
+        if (v === 'room') renderRoom();
+    }
+    function fit() {
+        const w = Math.min(wrap.clientWidth || 440, 920);
+        cell = Math.max(6, Math.floor(w / Sim.GW));
+        cv.width = cell * Sim.GW; cv.height = cell * Sim.GH;
+    }
+
+    // ---------- Firestore-Referenzen ----------
+    const fsd = () => N.fb.fs, db = () => N.fb.db;
+    const R = {
+        lobby: (code) => fsd().doc(db(), 'artifacts', APP, 'public', 'data', 'lobbies', code || N.code),
+        state: (code) => fsd().doc(db(), 'artifacts', APP, 'public', 'data', 'lobbystates', code || N.code),
+        input: (pid, code) => fsd().doc(db(), 'artifacts', APP, 'public', 'data', 'lobbyinputs', (code || N.code) + '_' + pid),
+        inputs: () => fsd().collection(db(), 'artifacts', APP, 'public', 'data', 'lobbyinputs')
+    };
+    async function getFb() {
+        if (N.fb) return N.fb;
+        const fb = window.__getFb ? await window.__getFb() : null;
+        N.fb = fb;
+        return fb;
+    }
+
+    // ---------- Lobby erstellen / beitreten ----------
+    async function createLobby() {
+        msg('⏳ Verbinde…');
+        const fb = await getFb();
+        if (!fb) { msg('Online nicht verfügbar (Firebase nicht erreichbar).'); return; }
+        N.pid = rid(8); N.host = true; N.gid = 0;
+        try {
+            const A = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+            let code = '';
+            for (let t = 0; t < 6; t++) {
+                code = ''; for (let i = 0; i < 5; i++) code += A[Math.floor(Math.random() * A.length)];
+                const s = await fb.fs.getDoc(R.lobby(code));
+                if (!s.exists()) break;
+            }
+            N.code = code;
+            await fb.fs.setDoc(R.lobby(), { code, host: N.pid, type: 'fight', size: 2, phase: 'lobby', gid: 0, created: Date.now(),
+                players: { [N.pid]: { n: myName(), team: 0, skin: mySkin(), at: Date.now() } } });
+            subscribe(); show('room'); msg('');
+        } catch (e) { N.code = ''; N.host = false; msg('Fehler: ' + errText(e)); }
+    }
+
+    async function joinLobby() {
+        const code = $('lbCodeInput').value.trim().toUpperCase();
+        if (code.length < 4) { msg('Bitte gib den Lobby-Code ein.'); return; }
+        msg('⏳ Verbinde…');
+        const fb = await getFb();
+        if (!fb) { msg('Online nicht verfügbar (Firebase nicht erreichbar).'); return; }
+        try {
+            const snap = await fb.fs.getDoc(R.lobby(code));
+            if (!snap.exists()) { msg('Keine Lobby mit diesem Code gefunden.'); return; }
+            const d = snap.data();
+            if (d.phase !== 'lobby') { msg('In dieser Lobby läuft gerade ein Spiel.'); return; }
+            const ps = Object.values(d.players || {});
+            if (ps.length >= 8) { msg('Die Lobby ist voll (max. 8 Spieler).'); return; }
+            const c0 = ps.filter((p) => p.team === 0).length, c1 = ps.length - c0;
+            N.code = code; N.pid = rid(8); N.host = false; N.gid = d.gid || 0;
+            await fb.fs.updateDoc(R.lobby(), { ['players.' + N.pid]: { n: myName(), team: c0 <= c1 ? 0 : 1, skin: mySkin(), at: Date.now() } });
+            subscribe(); show('room'); msg('');
+        } catch (e) { N.code = ''; msg('Fehler: ' + errText(e)); }
+    }
+
+    function subscribe() {
+        const fs = fsd();
+        N.unsubs.push(fs.onSnapshot(R.lobby(), onLobby, (e) => msg('Verbindung: ' + errText(e))));
+        N.unsubs.push(fs.onSnapshot(R.state(), (s) => {
+            if (!s.exists() || N.host) return;
+            const w = s.data();
+            if (w.g !== N.gid) return;
+            view = Sim.fromWire(w);
+        }, () => {}));
+        if (N.host) {
+            N.unsubs.push(fs.onSnapshot(fs.query(R.inputs(), fs.where('code', '==', N.code)), (qs) => {
+                qs.forEach((d) => { const v = d.data(); if (v.gid === N.gid) N.inputs[v.pid] = v.d; });
+            }, () => {}));
+        }
+    }
+
+    function onLobby(snap) {
+        if (!snap.exists()) {
+            if (!N.leaving) { toast('Die Lobby wurde geschlossen.'); teardown(); show('menu'); }
+            return;
+        }
+        const d = snap.data();
+        N.lobby = d;
+        if (d.phase === 'playing' && d.gid !== N.gid) { N.gid = d.gid; view = null; N.awarded = 0; if (uiView !== 'game') show('game'); }
+        if (d.phase === 'lobby' && uiView === 'game') { stopHost(); view = null; show('room'); }
+        if (N.host && N.sim && d.players) {
+            N.sim.snakes.forEach((s) => { if (s.pid && !d.players[s.pid] && !s.left) Sim.removePlayer(N.sim, s.pid); });
+        }
+        if (uiView === 'room') renderRoom();
+    }
+
+    // ---------- Lobby-Raum ----------
+    function sortedPlayers() {
+        return Object.entries((N.lobby && N.lobby.players) || {}).map(([pid, p]) => ({ pid, ...p })).sort((a, b) => a.at - b.at);
+    }
+    function renderRoom() {
+        const d = N.lobby;
+        if (!d) return;
+        $('lbCodeShow').textContent = N.code;
+        const ps = sortedPlayers();
+        const list = $('lbPlayers');
+        list.innerHTML = '';
+        const teamMode = d.type === 'fight' || d.type === 'ctf';
+        ps.forEach((p) => {
+            const row = document.createElement('div');
+            row.className = 'lb-row';
+            const name = document.createElement('span');
+            name.textContent = (p.pid === d.host ? '👑 ' : '👤 ') + p.n + (p.pid === N.pid ? ' (du)' : '');
+            row.appendChild(name);
+            const right = document.createElement('span');
+            if (!teamMode) {
+                right.textContent = d.type === 'race' ? '🏁 Rennfahrer' : '🧟 Überlebender';
+                right.style.color = d.type === 'race' ? '#ffd700' : '#a3e635';
+            } else if (p.pid === N.pid) {
+                TEAMS.forEach((t, i) => {
+                    const b = document.createElement('button');
+                    b.className = 'lb-chip' + (p.team === i ? ' on' : '');
+                    b.style.setProperty('--tc', t.hex);
+                    b.textContent = t.icon + ' ' + t.name;
+                    b.onclick = () => changeTeam(i);
+                    right.appendChild(b);
+                });
+            } else {
+                right.textContent = TEAMS[p.team].icon + ' Team ' + TEAMS[p.team].name;
+                right.style.color = TEAMS[p.team].hex;
+            }
+            row.appendChild(right);
+            list.appendChild(row);
+        });
+        $('lbType').value = d.type; $('lbSize').value = String(d.size);
+        $('lbType').disabled = !N.host; $('lbSize').disabled = !N.host;
+        $('lbSizeWrap').classList.toggle('lb-hide', !teamMode);
+        $('lbStartBtn').classList.toggle('lb-hide', !N.host);
+        const hints = {
+            fight: 'Fehlende Plätze werden mit Bots aufgefüllt. Jeder wählt sein Team selbst.',
+            ctf: 'Schnappt euch die gegnerische Flagge und bringt sie in eure Basis. Wer zuerst 3 Flaggen erobert (oder nach 3 Minuten führt), gewinnt. Gefallene Spieler kehren nach kurzer Zeit zurück. Fehlende Plätze füllen Bots.',
+            zombie: 'Alle Spieler kämpfen gemeinsam 2 Minuten gegen die Zombie-Horde. Heil-Tränke (+) vernichten Zombies und beleben gefallene Freunde.',
+            race: 'Alle gegen alle: Fahrt die Checkpoints 1–7 der Reihe nach ab. Felsen und Wände werfen euch zurück zum letzten Checkpoint. Bots fahren mit (mindestens 4 Fahrer).'
+        };
+        $('lbHint').textContent = N.host ? hints[d.type] : '⏳ Warte, bis der Host das Spiel startet…';
+    }
+    async function changeTeam(t) {
+        const ps = sortedPlayers();
+        if (ps.filter((p) => p.team === t && p.pid !== N.pid).length >= 4) { toast('Dieses Team ist voll (max. 4).'); return; }
+        try { await fsd().updateDoc(R.lobby(), { ['players.' + N.pid + '.team']: t }); } catch (e) { toast('Fehler: ' + errText(e)); }
+    }
+    async function changeSettings() {
+        if (!N.host) return;
+        try { await fsd().updateDoc(R.lobby(), { type: $('lbType').value, size: +$('lbSize').value }); } catch (e) { toast('Fehler: ' + errText(e)); }
+    }
+
+    // ---------- Host: Spiel starten & Simulation ----------
+    async function startGame() {
+        if (!N.host || !N.lobby) return;
+        const d = N.lobby, ps = sortedPlayers();
+        if (!ps.length) return;
+        const type = d.type;
+        const players = ps.map((p) => ({ pid: p.pid, name: p.n, team: (type === 'fight' || type === 'ctf') ? p.team : 0, skin: p.skin }));
+        let n = d.size;
+        if (type === 'fight' || type === 'ctf') n = Math.max(n, players.filter((p) => p.team === 0).length, players.filter((p) => p.team === 1).length);
+        N.gid = Date.now(); N.inputs = {}; N.overSent = false; N.awarded = 0; N.pending = null;
+        N.sim = Sim.create({ type, n, players, gid: N.gid });
+        view = Sim.fromWire(Sim.toWire(N.sim));
+        show('game');
+        try {
+            await fsd().updateDoc(R.lobby(), { phase: 'playing', gid: N.gid });
+        } catch (e) { toast('Fehler: ' + errText(e)); }
+        clearInterval(N.timer);
+        N.timer = setInterval(hostTick, Sim.TICK);
+    }
+    function hostTick() {
+        if (!N.sim) return;
+        if (N.sim.ph === 'over' && N.overSent) return;
+        Sim.step(N.sim, N.inputs);
+        const w = Sim.toWire(N.sim);
+        view = Sim.fromWire(w);
+        if (N.sim.ph === 'over') N.overSent = true;
+        N.pending = w;
+        flush();
+    }
+    function flush() {
+        if (N.writing || !N.pending) return;
+        const w = N.pending; N.pending = null; N.writing = true;
+        fsd().setDoc(R.state(), w).catch(() => {}).finally(() => { N.writing = false; if (N.pending) flush(); });
+    }
+    function stopHost() { clearInterval(N.timer); N.timer = null; N.sim = null; N.pending = null; }
+    async function toLobby() {
+        if (!N.host) return;
+        stopHost(); view = null;
+        try { await fsd().updateDoc(R.lobby(), { phase: 'lobby' }); } catch (e) { toast('Fehler: ' + errText(e)); }
+    }
+
+    function teardown() {
+        stopHost();
+        N.unsubs.forEach((u) => { try { u(); } catch (_) {} });
+        N.unsubs = []; N.code = ''; N.host = false; N.lobby = null; N.gid = 0; view = null;
+    }
+    async function leaveLobby() {
+        const fb = N.fb, code = N.code, pid = N.pid, host = N.host;
+        N.leaving = true;
+        N.unsubs.forEach((u) => { try { u(); } catch (_) {} });
+        N.unsubs = [];
+        stopHost();
+        try {
+            if (fb && code) {
+                if (host) { await fb.fs.deleteDoc(R.lobby(code)); await fb.fs.deleteDoc(R.state(code)); }
+                else {
+                    await fb.fs.updateDoc(R.lobby(code), { ['players.' + pid]: fb.fs.deleteField() });
+                    await fb.fs.deleteDoc(R.input(pid, code)).catch(() => {});
+                }
+            }
+        } catch (_) {}
+        N.code = ''; N.host = false; N.lobby = null; N.gid = 0; view = null; N.leaving = false;
+        show('menu'); msg('');
+    }
+
+    // ---------- Eingaben ----------
+    function sendDir(d) {
+        if (!view || uiView !== 'game') return;
+        const own = view.snakes.find((s) => s.pid === N.pid && s.alive);
+        if (!own || d === (own.dir + 2) % 4) return;
+        if (N.host) { N.inputs[N.pid] = d; return; }
+        fsd().setDoc(R.input(N.pid), { code: N.code, pid: N.pid, gid: N.gid, d, t: Date.now() }).catch(() => {});
+    }
+    document.addEventListener('keydown', (e) => {
+        if (!active || uiView !== 'game') return;
+        const tag = e.target && e.target.tagName;
+        if (tag === 'SELECT' || tag === 'INPUT') return;
+        const k = e.key.toLowerCase();
+        if (k === 'enter' && N.host && view && view.ph === 'over') { startGame(); e.preventDefault(); return; }
+        const m = { w: 0, arrowup: 0, d: 1, arrowright: 1, s: 2, arrowdown: 2, a: 3, arrowleft: 3 };
+        if (m[k] !== undefined) { sendDir(m[k]); e.preventDefault(); }
+    });
+    let tx = 0, ty = 0;
+    cv.addEventListener('touchstart', (e) => { tx = e.changedTouches[0].screenX; ty = e.changedTouches[0].screenY; }, { passive: true });
+    cv.addEventListener('touchend', (e) => {
+        const dx = e.changedTouches[0].screenX - tx, dy = e.changedTouches[0].screenY - ty;
+        if (Math.abs(dx) > Math.abs(dy)) { if (Math.abs(dx) > 20) sendDir(dx > 0 ? 1 : 3); }
+        else if (Math.abs(dy) > 20) sendDir(dy > 0 ? 2 : 0);
+    }, { passive: true });
+
+    // ---------- Rendering ----------
+    function drawSimple(s) {
+        const t = TEAMS[s.team];
+        s.body.forEach((p, i) => {
+            const hue = (view && view.ty === 'race') ? s.idx * 47 : t.hue + s.idx * 12;
+            c.fillStyle = `hsl(${hue}, 85%, ${i === 0 ? 70 : Math.max(34, 58 - i * 1.1)}%)`;
+            c.fillRect(p.x * cell + 1, p.y * cell + 1, cell - 2, cell - 2);
+        });
+        const h = s.body[0], d = Sim.D[s.dir], px = -d[1], py = d[0];
+        c.fillStyle = '#050709';
+        for (const sg of [-1, 1]) c.fillRect(h.x * cell + cell / 2 + d[0] * cell * 0.22 + px * sg * cell * 0.22 - 1.2, h.y * cell + cell / 2 + d[1] * cell * 0.22 + py * sg * cell * 0.22 - 1.2, 2.4, 2.4);
+    }
+    function drawSnake(s, now, manySnakes) {
+        const t = TEAMS[s.team];
+        const useSkin = typeof renderSnakeEntity === 'function' && typeof SKINS !== 'undefined' && s.skin && s.pid && (s.pid === N.pid || !manySnakes);
+        if (useSkin) {
+            const skin = SKINS.find((k) => k.id === s.skin) || SKINS[0];
+            c.save(); c.globalAlpha = 0.4; c.fillStyle = t.hex;
+            s.body.forEach((p) => c.fillRect(p.x * cell, p.y * cell, cell, cell));
+            c.restore();
+            renderSnakeEntity(c, s.body, Sim.D[s.dir][0], Sim.D[s.dir][1], cell, skin, now);
+        } else drawSimple(s);
+        const h = s.body[0];
+        c.strokeStyle = s.pid === N.pid ? '#ffffff' : ((view && view.ty === 'race') ? `hsl(${s.idx * 47}, 90%, 62%)` : t.hex); c.lineWidth = 2;
+        c.strokeRect(h.x * cell, h.y * cell, cell, cell);
+        if (s.pid) {
+            c.fillStyle = '#fff';
+            c.font = `bold ${Math.max(9, Math.round(cell * 1.3))}px 'Courier New', monospace`;
+            c.textAlign = 'center';
+            c.fillText(s.name.slice(0, 10), h.x * cell + cell / 2, h.y * cell - 3);
+        }
+    }
+    function overlay(title, sub, color) {
+        c.fillStyle = 'rgba(5,7,9,0.72)'; c.fillRect(0, 0, cv.width, cv.height);
+        c.textAlign = 'center'; c.fillStyle = color; c.shadowColor = color; c.shadowBlur = 16;
+        c.font = `bold ${Math.round(cv.width / 15)}px 'Courier New', monospace`;
+        c.fillText(title, cv.width / 2, cv.height / 2);
+        c.shadowBlur = 0;
+        if (sub) { c.fillStyle = '#c9d1d9'; c.font = `${Math.round(cv.width / 38)}px 'Courier New', monospace`; c.fillText(sub, cv.width / 2, cv.height / 2 + cv.width / 17); }
+    }
+    let lastHud = '';
+    function hud(v) {
+        let a, b;
+        if (!v) { a = '⏳ Warte auf Spieldaten…'; b = ''; }
+        else if (v.ty === 'race') {
+            const own = v.snakes.find((q) => q.pid === N.pid);
+            let lead = v.snakes[0];
+            v.snakes.forEach((q) => { if (q.cp > lead.cp) lead = q; });
+            a = `🏁 Zeit: ${v.tl}s · Dein Fortschritt: ${own ? own.cp : 0}/${v.cps.length}`;
+            b = `🥇 Führend: ${lead.name || 'BOT'} (${lead.cp}/${v.cps.length})`;
+        } else if (v.ty === 'ctf') {
+            a = `⏱ ${v.tl}s · 🔵 Blau: ${v.caps[0]}/3 🚩 · ${v.kills[0]} Elim.`;
+            b = `🔴 Rot: ${v.caps[1]}/3 🚩 · ${v.kills[1]} Elim.`;
+        } else if (v.ty === 'zombie') {
+            const alive = v.snakes.filter((s) => s.alive).length;
+            a = `🧟 Zeit: ${v.tl}s · Zombies besiegt: ${v.score}`;
+            b = `🧍 Überlebende: ${alive}/${v.snakes.length}`;
+        } else {
+            const al = (t) => v.snakes.filter((s) => s.alive && s.team === t).length;
+            a = `🔵 Team Blau: ${al(0)}/${v.n} lebend · ${v.kills[0]} Eliminierungen`;
+            b = `🔴 Team Rot: ${al(1)}/${v.n} lebend · ${v.kills[1]} Eliminierungen`;
+        }
+        if (a + b !== lastHud) { lastHud = a + b; $('aHudA').textContent = a; $('aHudB').textContent = b; }
+    }
+    function award() {
+        if (!view || view.ph !== 'over' || N.awarded === view.gid || typeof saveData === 'undefined') return;
+        N.awarded = view.gid;
+        const own = view.snakes.find((s) => s.pid === N.pid);
+        if (!own) return;
+        let coins = 0;
+        if (view.ty === 'zombie' && view.winner === 0) coins = 20;
+        else if ((view.ty === 'fight' || view.ty === 'ctf') && view.winner === own.team) coins = 15;
+        else if (view.ty === 'race' && view.winner === own.id) coins = 15;
+        if (coins) { saveData.coins += coins; if (typeof persistSaveData === 'function') persistSaveData(); toast(`🏆 Sieg! +${coins} 🪙`); }
+    }
+    function draw(now) {
+        raf = requestAnimationFrame(draw);
+        if (!active || uiView !== 'game') return;
+        const W = cv.width, H = cv.height;
+        $('gAgainBtn').classList.toggle('lb-hide', !(N.host && view && view.ph === 'over'));
+        $('gLobbyBtn').classList.toggle('lb-hide', !N.host);
+        c.fillStyle = '#050709'; c.fillRect(0, 0, W, H);
+        if (!view) { hud(null); overlay('VERBINDE…', 'Warte auf den Host', '#38bdf8'); return; }
+        const zomb = view.ty === 'zombie';
+        if (!zomb) {
+            c.fillStyle = 'rgba(56,189,248,0.06)'; c.fillRect(0, 0, W / 2, H);
+            c.fillStyle = 'rgba(251,113,133,0.06)'; c.fillRect(W / 2, 0, W / 2, H);
+        }
+        c.strokeStyle = 'rgba(57,255,20,0.08)'; c.lineWidth = 1;
+        for (let x = 0; x <= Sim.GW; x += 4) { c.beginPath(); c.moveTo(x * cell, 0); c.lineTo(x * cell, H); c.stroke(); }
+        for (let y = 0; y <= Sim.GH; y += 4) { c.beginPath(); c.moveTo(0, y * cell); c.lineTo(W, y * cell); c.stroke(); }
+        const pulse = Math.sin(now / 160) * 0.8;
+        const ownS = view.snakes.find((q) => q.pid === N.pid);
+        if (view.ty === 'ctf') {
+            const hy = Math.round(Sim.GH / 2);
+            [[2, 0], [Sim.GW - 3, 1]].forEach(([hx, t]) => {
+                c.fillStyle = t ? 'rgba(251,113,133,0.16)' : 'rgba(56,189,248,0.16)';
+                c.fillRect((hx - 3) * cell, (hy - 2) * cell, 7 * cell, 5 * cell);
+                c.strokeStyle = TEAMS[t].hex; c.lineWidth = 1.5;
+                c.strokeRect((hx - 3) * cell, (hy - 2) * cell, 7 * cell, 5 * cell);
+            });
+        }
+        if (view.ty === 'race') {
+            view.cps.forEach((p, i) => {
+                const mine = ownS ? ownS.cp : 0;
+                const px = p.x * cell + cell / 2, py = p.y * cell + cell / 2;
+                const next = i === mine, done = i < mine;
+                c.fillStyle = done ? 'rgba(57,255,20,0.12)' : next ? `rgba(255,215,0,${0.25 + 0.2 * Math.sin(now / 150)})` : 'rgba(56,189,248,0.1)';
+                c.strokeStyle = done ? '#39ff14' : next ? '#ffd700' : '#38bdf8'; c.lineWidth = next ? 3 : 1.5;
+                c.beginPath(); c.arc(px, py, cell * 1.6, 0, 7); c.fill(); c.stroke();
+                c.fillStyle = '#fff'; c.textAlign = 'center';
+                c.font = `bold ${Math.max(10, Math.round(cell * 1.6))}px 'Courier New', monospace`;
+                c.fillText(i === view.cps.length - 1 ? '🏁' : String(i + 1), px, py + cell * 0.5);
+            });
+            c.fillStyle = '#475569'; c.strokeStyle = '#94a3b8'; c.lineWidth = 1;
+            view.rocks.forEach((r) => { c.fillRect(r.x * cell + 1, r.y * cell + 1, cell - 2, cell - 2); c.strokeRect(r.x * cell + 1, r.y * cell + 1, cell - 2, cell - 2); });
+        }
+        c.fillStyle = '#ffd700'; c.shadowColor = '#ffd700'; c.shadowBlur = 8;
+        view.foods.forEach((f) => { c.beginPath(); c.arc(f.x * cell + cell / 2, f.y * cell + cell / 2, Math.max(2.5, cell * 0.36 + pulse), 0, 7); c.fill(); });
+        c.shadowBlur = 0;
+        view.potions.forEach((p) => {
+            const px = p.x * cell + cell / 2, py = p.y * cell + cell / 2;
+            c.fillStyle = '#22c55e'; c.shadowColor = '#4ade80'; c.shadowBlur = 10;
+            c.beginPath(); c.arc(px, py, cell * 0.5, 0, 7); c.fill(); c.shadowBlur = 0;
+            c.fillStyle = '#fff'; c.fillRect(px - 1, py - cell * 0.3, 2, cell * 0.6); c.fillRect(px - cell * 0.3, py - 1, cell * 0.6, 2);
+        });
+        view.zombies.forEach((z) => {
+            const wob = Math.sin(now / 120 + z.x) * 1;
+            c.fillStyle = '#65a30d'; c.shadowColor = '#a3e635'; c.shadowBlur = 6;
+            c.fillRect(z.x * cell + 1 + wob, z.y * cell + 1, cell - 2, cell - 2); c.shadowBlur = 0;
+            c.fillStyle = '#ef4444';
+            c.fillRect(z.x * cell + cell * 0.25 + wob, z.y * cell + cell * 0.3, 2, 2);
+            c.fillRect(z.x * cell + cell * 0.6 + wob, z.y * cell + cell * 0.3, 2, 2);
+        });
+        view.flags.forEach((f) => {
+            const px = f.x * cell + cell / 2, py = f.y * cell + cell / 2;
+            c.fillStyle = TEAMS[f.t].hex; c.shadowColor = TEAMS[f.t].hex; c.shadowBlur = 14;
+            c.beginPath(); c.arc(px, py, cell * 0.9, 0, 7); c.fill(); c.shadowBlur = 0;
+            c.fillStyle = '#fff'; c.textAlign = 'center';
+            c.font = `${Math.max(10, Math.round(cell * 1.5))}px sans-serif`;
+            c.fillText('🚩', px, py + cell * 0.5);
+        });
+        const aliveCount = view.snakes.filter((s) => s.alive).length;
+        const t = Date.now();
+        view.snakes.forEach((s) => { if (s.alive && s.body.length) drawSnake(s, t, aliveCount > 4); });
+        hud(view);
+
+        const sub = N.host ? 'Enter für neue Runde' : 'Warte auf den Host…';
+        const subs = { zombie: 'Überlebt 2 Minuten gegen die Horde!', ctf: 'Erobert die gegnerische Flagge – 3 Punkte gewinnen!', race: 'Fahrt die Checkpoints der Reihe nach ab!', fight: 'Macht euch bereit!' };
+        if (view.ph === 'count') overlay(String(view.cl), subs[view.ty] || '', '#ffd700');
+        else if (view.ph === 'over') {
+            if (zomb) overlay(view.winner === 0 ? 'ÜBERLEBT! 🏆' : 'DIE ZOMBIES GEWINNEN 🧟', sub, view.winner === 0 ? '#39ff14' : '#ef4444');
+            else if (view.ty === 'race') {
+                const w = view.snakes.find((q) => q.id === view.winner);
+                overlay(`🏁 ${((w && w.name) || 'BOT').toUpperCase()} GEWINNT!`, sub, '#ffd700');
+            }
+            else if (view.winner < 0) overlay('UNENTSCHIEDEN', sub, '#c9d1d9');
+            else overlay(`TEAM ${TEAMS[view.winner].name.toUpperCase()} GEWINNT! 🏆`, sub, TEAMS[view.winner].hex);
+            award();
+        } else if (view.ph === 'play') {
+            const own = view.snakes.find((s) => s.pid === N.pid);
+            if (own && !own.alive) {
+                c.fillStyle = '#fff'; c.textAlign = 'center'; c.font = `bold ${Math.round(cv.width / 40)}px 'Courier New', monospace`;
+                const txt = zomb ? '💀 Du bist gefallen – ein Freund kann dich mit einem Heil-Trank beleben!'
+                    : (view.ty === 'ctf' || view.ty === 'race') ? '💀 Du erscheinst gleich wieder…' : '💀 Du bist ausgeschieden – schau den anderen zu!';
+                c.fillText(txt, W / 2, 18);
+            }
+        }
+    }
+
+    // ---------- Öffnen / Schließen ----------
+    window.openTeamLobby = function () {
+        $('gameContainer').style.display = 'none';
+        const ctl = document.querySelector('.controls'), hint = document.querySelector('.hint');
+        if (ctl) ctl.style.display = 'none';
+        if (hint) hint.style.display = 'none';
+        wrap.classList.add('show');
+        active = true;
+        $('lbCodeInput').value = '';
+        msg('');
+        show('menu');
+        cancelAnimationFrame(raf);
+        raf = requestAnimationFrame(draw);
+    };
+    async function closeArena() {
+        if (N.code) await leaveLobby();
+        active = false;
+        cancelAnimationFrame(raf);
+        wrap.classList.remove('show');
+        $('gameContainer').style.display = '';
+        const ctl = document.querySelector('.controls'), hint = document.querySelector('.hint');
+        if (ctl) ctl.style.display = '';
+        if (hint) hint.style.display = '';
+        setScreen('MODES');
+    }
+
+    window.addEventListener('resize', () => { if (active && uiView === 'game') fit(); });
+    $('lbCreateBtn').addEventListener('click', createLobby);
+    $('lbJoinBtn').addEventListener('click', joinLobby);
+    $('lbCodeInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') joinLobby(); });
+    $('lbBackBtn').addEventListener('click', closeArena);
+    $('lbLeaveBtn').addEventListener('click', leaveLobby);
+    $('gLeaveBtn').addEventListener('click', leaveLobby);
+    $('lbStartBtn').addEventListener('click', startGame);
+    $('gAgainBtn').addEventListener('click', startGame);
+    $('gLobbyBtn').addEventListener('click', toLobby);
+    $('lbType').addEventListener('change', changeSettings);
+    $('lbSize').addEventListener('change', changeSettings);
+    $('lbCopyBtn').addEventListener('click', () => {
+        try { navigator.clipboard.writeText(N.code); toast('📋 Code kopiert: ' + N.code); } catch (_) { toast('Code: ' + N.code); }
+    });
+})();
     </script>
 </body>
 </html>
